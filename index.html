@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#05070d">
+<meta name="description" content="10 大品牌保修 / 激活 / 真伪一键速查，数据直连厂商官网，不存储任何序列号。">
+<title>DEVICE//OPS · 保修速查终端</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --bg:#05070d; --bg2:#0a0f1a; --card:rgba(255,255,255,.045); --line:rgba(120,180,255,.14);
+  --cy:#00e5ff; --vi:#7c4dff; --pk:#ff3d81; --gn:#00ffa3; --am:#ffb84d;
+  --tx:#e8f0ff; --tx2:#7d8ba3; --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  overflow-x:hidden;min-height:100%}
+
+/* ============ 动态背景：网格 + 极光 + 扫描线 ============ */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:
+  radial-gradient(1200px 600px at 12% -8%,rgba(0,229,255,.16),transparent 60%),
+  radial-gradient(900px 500px at 92% 8%,rgba(124,77,255,.18),transparent 62%),
+  radial-gradient(700px 700px at 50% 108%,rgba(255,61,129,.10),transparent 60%),
+  var(--bg)}
+.bg::before{content:"";position:absolute;inset:-50%;
+  background-image:linear-gradient(rgba(120,180,255,.07) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(120,180,255,.07) 1px,transparent 1px);
+  background-size:44px 44px;transform:perspective(700px) rotateX(62deg) translateY(8%);
+  animation:grid 18s linear infinite;mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 60%,transparent)}
+@keyframes grid{to{background-position:0 440px,0 0}}
+.bg::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(255,255,255,.022) 0 1px,transparent 1px 4px);
+  mix-blend-mode:overlay}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:float 14s ease-in-out infinite alternate}
+.orb.a{width:300px;height:300px;background:#00e5ff;top:-90px;left:-70px}
+.orb.b{width:260px;height:260px;background:#7c4dff;top:22%;right:-90px;animation-delay:-5s}
+@keyframes float{to{transform:translate3d(30px,40px,0) scale(1.18)}}
+
+.wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;
+  padding:calc(18px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+
+/* ============ 顶栏 HUD ============ */
+.hud{display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--tx2);
+  border:1px solid var(--line);border-radius:999px;padding:7px 13px;
+  background:linear-gradient(90deg,rgba(0,229,255,.08),rgba(124,77,255,.06));
+  backdrop-filter:blur(10px)}
+.hud .dot{width:6px;height:6px;border-radius:50%;background:var(--gn);
+  box-shadow:0 0 0 0 rgba(0,255,163,.7);animation:pulse 1.9s infinite;display:inline-block;margin-right:7px}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(0,255,163,0)}100%{box-shadow:0 0 0 0 rgba(0,255,163,0)}}
+.hud r{color:var(--cy)}
+
+/* ============ 标题区 ============ */
+.hero{margin:22px 2px 18px}
+.kicker{font-family:var(--mono);font-size:10px;letter-spacing:.34em;color:var(--vi);
+  text-transform:uppercase;margin-bottom:9px}
+h1{font-size:31px;line-height:1.12;font-weight:800;letter-spacing:-.5px}
+h1 em{font-style:normal;background:linear-gradient(92deg,var(--cy),var(--vi) 52%,var(--pk));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{margin-top:10px;font-size:12.5px;color:var(--tx2);line-height:1.75}
+.sub b{color:var(--am);font-weight:600}
+.kbd{font-family:var(--mono);font-size:11px;color:var(--cy);background:rgba(0,229,255,.09);
+  border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+
+/* ============ 分组标签 ============ */
+.tabs{display:flex;gap:7px;margin:20px 0 13px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;
+  padding:8px 14px;border-radius:999px;border:1px solid var(--line);color:var(--tx2);
+  background:rgba(255,255,255,.03);cursor:pointer;transition:.22s;white-space:nowrap}
+.tab.on{color:#05070d;font-weight:700;border-color:transparent;
+  background:linear-gradient(92deg,var(--cy),#5ee0ff);
+  box-shadow:0 0 18px rgba(0,229,255,.35)}
+
+/* ============ 卡片网格 ============ */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+@media(max-width:360px){.grid{grid-template-columns:repeat(2,1fr)}}
+.c{position:relative;display:block;text-decoration:none;color:var(--tx);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:15px 8px 12px;text-align:center;overflow:hidden;
+  backdrop-filter:blur(8px);transition:transform .18s cubic-bezier(.3,1.4,.5,1),border-color .2s;
+  animation:rise .5s both}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+.c:active{transform:scale(.94)}
+.c::before{content:"";position:absolute;inset:0 0 auto;height:2px;
+  background:linear-gradient(90deg,transparent,var(--c,var(--cy)),transparent);opacity:.85}
+.c::after{content:"";position:absolute;top:-40%;left:-60%;width:60%;height:180%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.13),transparent);
+  transform:skewX(-18deg);transition:.5s}
+.c:active::after{left:120%}
+.c .ico{font-size:23px;line-height:1;filter:drop-shadow(0 0 10px var(--c,rgba(0,229,255,.5)))}
+.c .nm{display:block;font-size:13px;font-weight:700;margin-top:8px;letter-spacing:.2px}
+.c .tg{display:block;font-family:var(--mono);font-size:9px;color:var(--tx2);
+  margin-top:4px;letter-spacing:.06em}
+.c .go{position:absolute;top:8px;right:9px;font-family:var(--mono);font-size:8.5px;
+  color:var(--c,var(--cy));opacity:.55}
+.hide{display:none!important}
+
+/* ============ 工具条 ============ */
+.tools{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.t{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx2);
+  border:1px dashed var(--line);border-radius:12px;padding:12px 10px;text-align:center;
+  background:rgba(255,255,255,.02);cursor:pointer;transition:.2s}
+.t:active{color:var(--cy);border-color:var(--cy);background:rgba(0,229,255,.07)}
+.t i{font-style:normal;display:block;font-size:15px;margin-bottom:5px}
+
+/* ============ 我的设备（本地） ============ */
+.panel{margin-top:18px;border:1px solid var(--line);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(0,229,255,.05),rgba(124,77,255,.03));
+  padding:14px;backdrop-filter:blur(10px)}
+.ph{display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--vi);margin-bottom:11px}
+.ph span{color:var(--tx2);letter-spacing:.04em}
+.frow{display:flex;gap:7px;margin-bottom:9px}
+select,input{font-family:var(--mono);font-size:12px;color:var(--tx);
+  background:rgba(5,7,13,.7);border:1px solid var(--line);border-radius:9px;
+  padding:10px 9px;outline:none;min-width:0;-webkit-appearance:none}
+select{flex:0 0 88px}
+input{flex:1}
+input:focus,select:focus{border-color:var(--cy);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+button.add{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;font-weight:700;
+  color:#05070d;background:linear-gradient(92deg,var(--cy),#5ee0ff);border:0;
+  border-radius:9px;padding:0 13px;cursor:pointer}
+.hint{font-family:var(--mono);font-size:9.5px;color:var(--tx2);line-height:1.65}
+.hint b{color:var(--am)}
+ul.dev{list-style:none;margin-top:11px;display:flex;flex-direction:column;gap:8px}
+ul.dev li{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;
+  border:1px solid var(--line);border-left:2px solid var(--c,var(--cy));border-radius:10px;
+  padding:10px 11px;background:rgba(5,7,13,.55)}
+ul.dev li .m{flex:1;color:var(--tx)}
+ul.dev li .d{color:var(--tx2);font-size:10.5px}
+ul.dev li .dd{font-size:10px;padding:2px 7px;border-radius:999px;white-space:nowrap}
+.warn{color:var(--pk)}.mid{color:var(--am)}.ok{color:var(--gn)}
+ul.dev li x{color:var(--tx2);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}
+ul.dev li x:active{color:var(--pk)}
+
+/* ============ 页脚 ============ */
+foot{display:block;margin-top:24px;text-align:center;font-family:var(--mono);
+  font-size:9.5px;color:#4d5a70;line-height:1.9}
+foot a{color:#6b7c96;text-decoration:none;border-bottom:1px dotted #33405a}
+.bar{position:fixed;top:0;left:0;height:2px;width:0;z-index:9;
+  background:linear-gradient(90deg,var(--cy),var(--vi),var(--pk));transition:width .1s linear}
+#toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+  z-index:20;font-family:var(--mono);font-size:11.5px;color:var(--tx);
+  background:rgba(10,15,26,.94);border:1px solid var(--cy);border-radius:999px;
+  padding:10px 18px;opacity:0;pointer-events:none;transition:.28s;backdrop-filter:blur(12px);
+  box-shadow:0 0 26px rgba(0,229,255,.25)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="bg"><div class="orb a"></div><div class="orb b"></div></div>
+<div class="bar" id="bar"></div>
+
+<div class="wrap">
+
+  <div class="hud">
+    <span><span class="dot"></span>SYSTEM ONLINE</span>
+    <span><r id="clk">--:--:--</r> · <span id="cnt">10</span> NODES</span>
+  </div>
+
+  <div class="hero">
+    <div class="kicker">WARRANTY · ACTIVATION · AUTHENTICITY</div>
+    <h1>设备<em>保修速查</em>终端</h1>
+    <div class="sub">
+      点品牌 → 直连<b>厂商官网</b>输序列号。<br>
+      序列号位置：<span class="kbd">设置 → 关于本机</span> 或机身/包装盒标签<br>
+      本站<b>不收集、不存储</b>任何完整 SN，结果以官网为准。
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-f="all">ALL / 10</div>
+    <div class="tab" data-f="phone">📱 手机</div>
+    <div class="tab" data-f="camera">🚁 影像航拍</div>
+    <div class="tab" data-f="pc">💻 电脑</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="tools">
+    <div class="t" id="bCopy"><i>⎘</i>复制查询话术</div>
+    <div class="t" id="bSn"><i>⌨</i>序列号规则速查</div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">MY DEVICES<span>· 仅存本机</span></div>
+    <div class="frow">
+      <select id="iB"></select>
+      <input id="iM" placeholder="机型 iPhone 17 Pro" maxlength="24">
+    </div>
+    <div class="frow">
+      <input id="iD" type="date" style="flex:1">
+      <button class="add" id="bAdd">+ 存档</button>
+    </div>
+    <div class="hint">只存 <b>SN 后 4 位</b> + 到期日，明文序列号一律不落库。到期前 <b>7 天</b>自动标红。</div>
+    <ul class="dev" id="dev"></ul>
+  </div>
+
+  <foot>
+    DEVICE//OPS v1.0 · 第三方导航工具，与所列品牌均无关联<br>
+    数据直连各品牌官网 · <a href="#" id="bReset">清空本机档案</a><br>
+    © <span id="yr">2026</span> · 链接失效请在公众号回复「反馈」
+  </foot>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ================= 数据源（你给的 10 条，已做微信内兼容处理） ================= */
+const DATA=[
+ {n:"苹果",     ico:"🍎", c:"#e8e8ed", g:"phone",  tg:"APPLECARE",
+  u:"https://checkcoverage.apple.com/zh_CN"},
+ {n:"华为",     ico:"🔴", c:"#ff3d5a", g:"phone",  tg:"保修状态",
+  u:"https://consumer.huawei.com/cn/support/warranty-query/"},
+ {n:"荣耀",     ico:"🟠", c:"#ff8a2b", g:"phone",  tg:"保修状态",
+  u:"https://www.honor.com/cn/support/warranty-query/"},
+ {n:"小米红米", ico:"🟡", c:"#ffb84d", g:"phone",  tg:"激活日期",
+  /* 原客服会话链接带 cUserId 会过期，这里换官网常驻入口 */
+  u:"https://www.mi.com/service/"},
+ {n:"OPPO一加", ico:"🟢", c:"#00ffa3", g:"phone",  tg:"真伪·保修",
+  u:"https://support.oppo.com/cn/check/"},
+ {n:"vivo·iQOO",ico:"🔵", c:"#3d8bff", g:"phone",  tg:"真伪查询",
+  u:"https://support.vivo.com.cn/service/authenticityCheck"},
+ {n:"大疆",     ico:"🚁", c:"#00e5ff", g:"camera", tg:"CARE 查询",
+  u:"https://repair.dji.com/device/search?lang=zh-CN&re=cn"},
+ {n:"影石360",  ico:"📷", c:"#7c4dff", g:"camera", tg:"INSTA360 CARE",
+  u:"https://www.insta360.com/cn/support/Insta360Care/query"},
+ {n:"联想",     ico:"💻", c:"#ff3d81", g:"pc",     tg:"保修·配置",
+  u:"https://newsupport.lenovo.com.cn/guardeploySearch.html?from=guarteen"},
+ {n:"华硕",     ico:"🖥️", c:"#4dd6ff", g:"pc",     tg:"保修状态",
+  u:"https://www.asus.com.cn/support/warranty-status-inquiry/"}
+];
+
+/* 序列号规则（点第二条弹窗用） */
+const SN_RULE=[
+ "🍎 苹果：11 位随机字母数字，无含义；设置→通用→关于→序列号（长按可复制）",
+ "🔴 华为/🟠 荣耀：SN 通常 14–16 位，第 7–8 位为年份周次；*#*#2846579#*#* 或关于手机",
+ "🟡 小米：12 位，以 3/8 开头居多；包装盒侧标 + 关于手机",
+ "🟢 OPPO/一加：16–17 位；关于本机→状态信息，或卡托/盒标",
+ "🔵 vivo/iQOO：16 位；关于手机→序列号，或盒标 SN",
+ "🚁 大疆：机臂/电池仓内激光刻印 + 盒标，Care 需 SN 后 5 位",
+ "📷 影石：机身底部或镜头环刻印 SN，需注册后绑 Care",
+ "💻 联想：主机底部 S/N + MTM 两串都要填，缺一查不出",
+ "🖥️ 华硕：底盖 S/N 10 位 + 序列号 7 位，笔记本按 Fn+Esc 也可显"
+];
+
+/* ================= 渲染 ================= */
+const grid=document.getElementById('grid');
+function render(f="all"){
+  grid.innerHTML="";
+  DATA.filter(d=>f==="all"||d.g===f).forEach((d,i)=>{
+    const a=document.createElement('a');
+    a.className='c'; a.href=d.u; a.target="_blank"; a.rel="noopener noreferrer";
+    a.style.setProperty('--c',d.c); a.style.animationDelay=(i*.045)+"s";
+    a.innerHTML=`<span class="go">↗</span><div class="ico">${d.ico}</div>
+                 <span class="nm">${d.n}</span><span class="tg">${d.tg}</span>`;
+    a.onclick=()=>toast(`跳转 ${d.n} 官网 → 首次会确认「离开微信」，正常现象`);
+    grid.appendChild(a);
+  });
+  document.getElementById('cnt').textContent=DATA.filter(d=>f==="all"||d.g===f).length;
+}
+document.getElementById('tabs').onclick=e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
+  [...e.currentTarget.children].forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); render(t.dataset.f);
+};
+render();
+
+/* ================= 时钟 + 滚动进度 ================= */
+const clk=document.getElementById('clk');
+setInterval(()=>clk.textContent=new Date().toLocaleTimeString('en-GB'),1000);
+document.getElementById('yr').textContent=new Date().getFullYear();
+addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  document.getElementById('bar').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%";
+},{passive:true});
+
+/* ================= Toast ================= */
+let tt;
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('on');
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('on'),2100);}
+
+/* ================= 工具1：复制查询话术 ================= */
+document.getElementById('bCopy').onclick=async()=>{
+  const txt=`【二手验机·保修自查 6 步】
+1️⃣ 要 SN：让卖家拍「设置→关于本机」实拍图，别收截图
+2️⃣ 查保修：点我发的导航页 → 选品牌 → 官网输 SN
+3️⃣ 对日期：激活日 ≠ 付款日，差 >30 天要问清
+4️⃣ 看权益：AppleCare+/碎屏保/延保是否仍在期
+5️⃣ 查黑机：官网查不到 = 官换机/改码机/已报修，直接跑
+6️⃣ 留证据：官网结果页整屏录屏，砍价与维权都靠它
+—— 导航页不存任何序列号，放心点`;
+  try{await navigator.clipboard.writeText(txt);toast("✓ 验机话术已复制，发卖家/发群都行");}
+  catch{toast("长按此处手动复制");}
+};
+
+/* ================= 工具2：SN 规则速查 ================= */
+document.getElementById('bSn').onclick=()=>{
+  alert("序列号在哪找 · 各品牌规则\n\n"+SN_RULE.join("\n\n")+"\n\n⚠️ 官网查不到 ≠ 一定是假货：可能是官换机、海外版、刚出厂未入库（等 24–72h）。");
+};
+
+/* ================= 我的设备（localStorage，明文 SN 不落库） ================= */
+const KEY="devops.v1";
+const BRANDS=["🍎苹果","🔴华为","🟠荣耀","🟡小米","🟢OPPO","🔵vivo","🚁大疆","📷影石","💻联想","🖥️华硕"];
+const iB=document.getElementById('iB'),iM=document.getElementById('iM'),
+      iD=document.getElementById('iD'),dev=document.getElementById('dev');
+iB.innerHTML=BRANDS.map(b=>`<option>${b}</option>`).join("");
+const load=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch{return[]}};
+const save=a=>localStorage.setItem(KEY,JSON.stringify(a));
+const COLOR=i=>["#e8e8ed","#ff3d5a","#ff8a2b","#ffb84d","#00ffa3","#3d8bff","#00e5ff","#7c4dff","#ff3d81","#4dd6ff"][i%10];
+
+function left(d){return Math.ceil((new Date(d+"T23:59:59")-Date.now())/864e5)}
+function badge(d){
+  const n=left(d);
+  if(n<0) return ['已过保','warn'];
+  if(n<=7) return [n+'天到期','warn'];
+  if(n<=30) return [n+'天','mid'];
+  return [n+'天','ok'];
+}
+function draw(){
+  const a=load().sort((x,y)=>new Date(x.d)-new Date(y.d));
+  dev.innerHTML=a.length?a.map((o,i)=>{
+    const [t,k]=badge(o.d), bi=Math.max(0,BRANDS.indexOf(o.b));
+    return `<li style="--c:${COLOR(bi)}"><span>${o.b}</span>
+      <span class="m">${o.m}<br><span class="d">SN ••••${o.s} · ${o.d}</span></span>
+      <span class="dd ${k}">${t}</span><x data-i="${i}">×</x></li>`;
+  }).join(""):`<div class="hint" style="padding:4px 2px">档案为空。存一台试试 → 到期前 7 天自动标红，比日历靠谱。</div>`;
+  dev.querySelectorAll('x').forEach(x=>x.onclick=()=>{
+    const a=load();a.splice(+x.dataset.i,1);save(a);draw();toast("已删除本机记录");
+  });
+}
+document.getElementById('bAdd').onclick=()=>{
+  const m=iM.value.trim(), s=(prompt("只填 SN 后 4 位（明文不存）","")||"").replace(/[^a-zA-Z0-9]/g,"").slice(-4);
+  if(!m)return toast("先填机型");
+  if(!iD.value)return toast("选一下到期日");
+  if(!s)return toast("需要 SN 后 4 位用于区分");
+  const a=load(); a.push({b:iB.value,m,s,d:iD.value}); save(a);
+  iM.value="";iD.value="";draw();toast("✓ 已存档（仅本机，未上传）");
+};
+document.getElementById('bReset').onclick=e=>{
+  e.preventDefault();
+  if(confirm("清空本机全部设备档案？此操作不可恢复。")){localStorage.removeItem(KEY);draw();toast("已清空");}
+};
+draw();
+
+/* ================= 微信内：隐藏多余 UI，勿劫持跳转 ================= */
+if(/MicroMessenger/i.test(navigator.userAgent)){
+  const s=document.createElement('style');
+  s.textContent=".tools .t:first-child::after{content:'（微信里已自动改用长按复制）';font-size:9px;color:#4d5a70}";
+  document.head.appendChild(s);
+}
+</script>
+</body>
+</html>
